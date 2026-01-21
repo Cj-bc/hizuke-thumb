@@ -1,0 +1,2 @@
+# hizuke-thumb
+ひづけサムネ
