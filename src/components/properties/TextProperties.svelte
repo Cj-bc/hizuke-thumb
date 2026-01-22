@@ -77,6 +77,15 @@
     { value: 'ja', label: '日本語' },
     { value: 'en', label: '英語' },
   ];
+
+  // Filter date format presets by locale (only used when content.type === 'date')
+  const filteredDatePresets = $derived(() => {
+    if (layer.content.type === 'date') {
+      const dateContent = layer.content as { type: 'date'; format: string; locale: 'ja' | 'en' };
+      return DATE_FORMAT_PRESETS.filter(p => p.locale === dateContent.locale);
+    }
+    return [];
+  });
 </script>
 
 <div class="space-y-4">
@@ -143,7 +152,7 @@
       <div class="mt-2 max-h-24 overflow-auto">
         <p class="text-xs text-text-secondary mb-1">プリセット:</p>
         <div class="flex flex-wrap gap-1">
-          {#each DATE_FORMAT_PRESETS.filter(p => p.locale === layer.content.locale) as preset}
+          {#each filteredDatePresets() as preset}
             <button
               class="px-2 py-0.5 text-xs bg-bg-tertiary hover:bg-border rounded"
               onclick={() => updateContent({ format: preset.format })}

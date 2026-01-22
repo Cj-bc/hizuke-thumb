@@ -1,7 +1,7 @@
 <script lang="ts">
   import LayerItem from '$components/layers/LayerItem.svelte';
   import { layerState, presetState, canvasState } from '$lib/state';
-  import { selectImageFile, uploadImage, getImageDimensions } from '$lib/storage';
+  import { uploadImage, getImageDimensions } from '$lib/storage';
   import type { TextContent } from '$lib/types';
 
   async function handleAddImageLayer() {

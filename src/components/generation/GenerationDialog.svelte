@@ -90,7 +90,7 @@
           height={canvasState.height}
           class="shadow-lg"
           style="transform: scale({previewScale()}); transform-origin: center;"
-        />
+        ></canvas>
       </div>
     </div>
 

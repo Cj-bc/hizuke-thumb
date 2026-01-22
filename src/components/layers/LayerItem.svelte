@@ -32,6 +32,16 @@
     e.preventDefault();
     // 将来的にはコンテキストメニューを表示
   }
+
+  function handleToggleVisibility(e: MouseEvent) {
+    e.stopPropagation();
+    ontogglevisibility();
+  }
+
+  function handleToggleLock(e: MouseEvent) {
+    e.stopPropagation();
+    ontogglelock();
+  }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -53,7 +63,7 @@
 
   <!-- 表示/非表示 -->
   <button
-    onclick|stopPropagation={ontogglevisibility}
+    onclick={handleToggleVisibility}
     class="p-1 rounded hover:bg-bg-secondary {layer.visible ? 'text-text-secondary' : 'text-text-secondary/30'}"
     title={layer.visible ? '非表示にする' : '表示する'}
   >
@@ -71,7 +81,7 @@
 
   <!-- ロック -->
   <button
-    onclick|stopPropagation={ontogglelock}
+    onclick={handleToggleLock}
     class="p-1 rounded hover:bg-bg-secondary {layer.locked ? 'text-accent' : 'text-text-secondary/30'}"
     title={layer.locked ? 'ロック解除' : 'ロック'}
   >

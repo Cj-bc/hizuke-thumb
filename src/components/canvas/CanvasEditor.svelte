@@ -6,7 +6,7 @@
   import { selectImageFile } from '$lib/utils';
 
   let containerEl: HTMLDivElement;
-  let canvasEl: HTMLCanvasElement;
+  let canvasEl = $state<HTMLCanvasElement>(null!);
   let engine: CanvasEngine;
 
   // ドラッグ状態
@@ -247,7 +247,7 @@
           onmousemove={handleMouseMove}
           onmouseup={handleMouseUp}
           onmouseleave={handleMouseUp}
-        />
+        ></canvas>
 
         <!-- グリッド表示 -->
         {#if canvasState.settings.showGrid}
@@ -258,7 +258,7 @@
               background-image: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
                                linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
             "
-          />
+          ></div>
         {/if}
       </div>
     {:else}

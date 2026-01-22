@@ -39,6 +39,10 @@
     showMenu = false;
     action();
   }
+
+  function handleMenuStop(e: MouseEvent) {
+    e.stopPropagation();
+  }
 </script>
 
 <div
@@ -79,7 +83,7 @@
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="absolute right-0 top-full mt-1 bg-bg-secondary border border-border rounded shadow-lg z-10 py-1 min-w-32"
-            onclick|stopPropagation={() => {}}
+            onclick={handleMenuStop}
           >
             <button
               class="w-full px-3 py-1.5 text-left text-sm text-text-primary hover:bg-bg-tertiary"
