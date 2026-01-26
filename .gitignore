@@ -1,0 +1,25 @@
+# Bun
+node_modules
+bun.lockb
+
+# Build output
+dist/
+.svelte-kit/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/
+
+# Logs
+*.log
