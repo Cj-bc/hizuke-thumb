@@ -20,4 +20,6 @@ export {
   downloadJson,
   sanitizeFilename,
   generateFilename,
+  downloadAsZip,
+  downloadImagesAsZip,
 } from './fileHandler';

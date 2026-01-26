@@ -11,8 +11,10 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@types/jszip": "^3.4.1",
+    "date-fns": "^3.6.0",
     "dexie": "^4.0.0",
-    "date-fns": "^3.6.0"
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0",

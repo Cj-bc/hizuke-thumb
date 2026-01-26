@@ -1,3 +1,5 @@
+import JSZip from 'jszip';
+
 /**
  * ファイル選択ダイアログを開く
  */
@@ -143,4 +145,52 @@ export function generateFilename(
     .replace('{preset_name}', presetName ? sanitizeFilename(presetName) : 'preset');
 
   return filename;
+}
+
+/**
+ * 複数のBlobをZIPファイルにまとめてダウンロード
+ */
+export async function downloadAsZip(
+  files: { name: string; blob: Blob }[],
+  zipFilename: string
+): Promise<void> {
+  const zip = new JSZip();
+
+  for (const file of files) {
+    zip.file(file.name, file.blob);
+  }
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(zipBlob, zipFilename);
+}
+
+/**
+ * 複数日付の画像をZIPでダウンロード
+ */
+export async function downloadImagesAsZip(
+  images: { date: Date; blob: Blob }[],
+  filenameTemplate: string,
+  presetName?: string
+): Promise<void> {
+  if (images.length === 0) return;
+
+  const files = images.map(({ date, blob }) => ({
+    name: generateFilename(filenameTemplate, date, presetName),
+    blob,
+  }));
+
+  // ZIPファイル名を生成（開始日〜終了日）
+  const sortedDates = images.map(i => i.date).sort((a, b) => a.getTime() - b.getTime());
+  const startDate = sortedDates[0];
+  const endDate = sortedDates[sortedDates.length - 1];
+
+  const formatDatePart = (d: Date) => [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('');
+
+  const zipFilename = `thumbnails_${formatDatePart(startDate)}-${formatDatePart(endDate)}.zip`;
+
+  await downloadAsZip(files, zipFilename);
 }
