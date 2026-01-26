@@ -15,8 +15,14 @@ class LayerState {
     this.layers.filter(l => l.visible)
   );
 
+  // Z-indexで昇順ソート（Canvas描画用：下から順に描画）
   sortedLayers = $derived(
     [...this.layers].sort((a, b) => a.zIndex - b.zIndex)
+  );
+
+  // Z-indexで降順ソート（レイヤーパネル表示用：上のレイヤーを上に表示）
+  sortedLayersDesc = $derived(
+    [...this.layers].sort((a, b) => b.zIndex - a.zIndex)
   );
 
   // レイヤー追加

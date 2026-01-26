@@ -84,11 +84,6 @@
     layerState.duplicateLayer(id);
     presetState.triggerAutoSave();
   }
-
-  // 逆順（上のレイヤーが上に表示）
-  const sortedLayers = $derived(
-    [...layerState.layers].sort((a, b) => b.zIndex - a.zIndex)
-  );
 </script>
 
 <div class="p-2">
@@ -129,7 +124,7 @@
   </div>
 
   <div class="space-y-1">
-    {#each sortedLayers as layer (layer.id)}
+    {#each layerState.sortedLayersDesc as layer (layer.id)}
       <LayerItem
         {layer}
         selected={layerState.selectedLayerId === layer.id}
@@ -141,7 +136,7 @@
       />
     {/each}
 
-    {#if sortedLayers.length === 0}
+    {#if layerState.sortedLayersDesc.length === 0}
       <p class="text-text-secondary text-sm text-center py-4">
         レイヤーがありません
       </p>

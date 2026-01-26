@@ -52,12 +52,10 @@
 
   // レイヤーのヒットテスト
   function hitTestLayer(x: number, y: number): string | null {
-    // 逆順（上のレイヤーから）でチェック
-    const sortedLayers = [...layerState.layers]
-      .filter(l => l.visible && !l.locked)
-      .sort((a, b) => b.zIndex - a.zIndex);
+    // sortedLayersDesc（降順ソート済み）をフィルタリング
+    const hitTestLayers = layerState.sortedLayersDesc.filter(l => l.visible && !l.locked);
 
-    for (const layer of sortedLayers) {
+    for (const layer of hitTestLayers) {
       if (layer.type === 'image') {
         if (
           x >= layer.position.x &&

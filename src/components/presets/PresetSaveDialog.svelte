@@ -8,15 +8,10 @@
 
   let { open = $bindable(false) }: Props = $props();
 
-  let presetName = $state('');
+  // Svelte 5.25+: $derived values can be bound and overridden by user input
+  // When the source (currentPresetName) changes, it resets to the derived value
+  let presetName = $derived(presetState.currentPresetName);
   let isSaveAs = $state(false);
-
-  $effect(() => {
-    if (open) {
-      presetName = presetState.currentPresetName;
-      isSaveAs = false;
-    }
-  });
 
   async function handleSave() {
     if (!presetName.trim()) return;
@@ -28,10 +23,12 @@
       await presetState.save();
     }
 
+    isSaveAs = false;
     open = false;
   }
 
   function handleCancel() {
+    isSaveAs = false;
     open = false;
   }
 </script>
