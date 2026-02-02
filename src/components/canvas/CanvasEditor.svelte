@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
   import { CanvasEngine } from '$lib/canvas';
   import { canvasState, layerState, presetState } from '$lib/state';
   import { selectImageFile } from '$lib/utils';
 
   let containerEl: HTMLDivElement;
-  let canvasEl = $state<HTMLCanvasElement>(null!);
-  let engine: CanvasEngine;
+  let canvasEl = $state<HTMLCanvasElement | null>(null);
+  let engine: CanvasEngine | null = null;
 
   // ドラッグ状態
   let isDragging = $state(false);
@@ -16,10 +15,12 @@
   // 現在の日付（プレビュー用）
   let previewDate = $state(new Date());
 
-  // Canvas初期化
-  onMount(() => {
-    engine = new CanvasEngine(canvasEl);
-    requestAnimationFrame(renderLoop);
+  // Canvas初期化 - canvasEl が存在する時のみエンジンを作成
+  $effect(() => {
+    if (canvasEl && !engine) {
+      engine = new CanvasEngine(canvasEl);
+      requestAnimationFrame(renderLoop);
+    }
   });
 
   // レンダリングループ
@@ -39,7 +40,8 @@
   }
 
   // マウス座標をCanvas座標に変換
-  function getCanvasCoords(e: MouseEvent): { x: number; y: number } {
+  function getCanvasCoords(e: MouseEvent): { x: number; y: number } | null {
+    if (!canvasEl) return null;
     const rect = canvasEl.getBoundingClientRect();
     const scaleX = canvasState.width / rect.width;
     const scaleY = canvasState.height / rect.height;
@@ -96,6 +98,7 @@
     if (e.button !== 0) return; // 左クリックのみ
 
     const coords = getCanvasCoords(e);
+    if (!coords) return;
     const hitLayerId = hitTestLayer(coords.x, coords.y);
 
     if (hitLayerId) {
@@ -120,6 +123,7 @@
     if (!isDragging || !dragStart || !layerState.selectedLayerId) return;
 
     const coords = getCanvasCoords(e);
+    if (!coords) return;
     const deltaX = coords.x - dragStart.x;
     const deltaY = coords.y - dragStart.y;
 
