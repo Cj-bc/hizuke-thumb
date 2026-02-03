@@ -121,7 +121,7 @@ class PresetState {
           height: canvasState.height,
           baseImageId: canvasState.baseImageId!,
         },
-        layers: layerState.layers,
+        layers: $state.snapshot(layerState.layers),
         updatedAt: Date.now(),
       };
 
@@ -174,7 +174,7 @@ class PresetState {
       height: canvasState.height,
       baseImageId: canvasState.baseImageId!,
     };
-    newPreset.layers = layerState.layers;
+    newPreset.layers = $state.snapshot(layerState.layers);
 
     await savePreset(newPreset);
     this.currentPreset = newPreset;
