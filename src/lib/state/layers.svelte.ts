@@ -64,8 +64,10 @@ class LayerState {
 
     const newId = generateId();
     const maxZIndex = Math.max(...this.layers.map(l => l.zIndex));
+    // $state.snapshot()でProxyを解除してからstructuredCloneでディープコピー
+    const plainLayer = $state.snapshot(layer);
     const newLayer: Layer = {
-      ...structuredClone(layer),
+      ...structuredClone(plainLayer),
       id: newId,
       name: `${layer.name} (コピー)`,
       zIndex: maxZIndex + 1,
