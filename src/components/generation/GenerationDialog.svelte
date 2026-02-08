@@ -4,7 +4,6 @@
   import { CanvasEngine } from '$lib/canvas';
   import { canvasState, layerState } from '$lib/state';
   import { downloadBlob, generateFilename } from '$lib/utils';
-  import { onMount } from 'svelte';
 
   interface Props {
     open: boolean;
@@ -69,54 +68,43 @@
     open = false;
   }
 
-  // プレビューのスケール計算
-  const previewScale = $derived(() => {
-    const maxWidth = 600;
-    const maxHeight = 400;
-    const scaleX = maxWidth / canvasState.width;
-    const scaleY = maxHeight / canvasState.height;
-    return Math.min(scaleX, scaleY, 1);
-  });
+
 </script>
 
-<Modal {open} title="サムネイルを生成" size="xl" onclose={handleClose}>
-  <div class="flex gap-6">
+<Modal {open} title="サムネイルを生成" size="4xl" onclose={handleClose}>
+  <div class="space-y-4">
     <!-- プレビュー -->
-    <div class="flex-1">
-      <div class="bg-bg-primary rounded p-4 flex items-center justify-center">
-        <canvas
-          bind:this={canvasEl}
-          width={canvasState.width}
-          height={canvasState.height}
-          class="shadow-lg"
-          style="transform: scale({previewScale()}); transform-origin: center;"
-        ></canvas>
-      </div>
+    <div class="bg-bg-primary rounded flex items-center justify-center">
+      <canvas
+        bind:this={canvasEl}
+        width={canvasState.width}
+        height={canvasState.height}
+        class="shadow-lg w-full h-auto"
+      ></canvas>
     </div>
 
     <!-- コントロール -->
-    <div class="w-64 space-y-4">
-      <div>
-        <h4 class="text-sm font-medium text-text-secondary mb-2">日付を選択</h4>
+    <div class="flex items-center gap-4 pt-2 border-t border-border">
+      <div class="flex items-center gap-2">
+        <h4 class="text-sm font-medium text-text-secondary">日付を選択</h4>
         <DatePicker bind:value={selectedDate} onchange={() => renderPreview()} />
       </div>
 
-      <div class="text-sm text-text-secondary">
-        <p>ファイル名: thumbnail_{selectedDate.getFullYear()}{String(selectedDate.getMonth() + 1).padStart(2, '0')}{String(selectedDate.getDate()).padStart(2, '0')}.png</p>
-        <p class="mt-1">サイズ: {canvasState.width} x {canvasState.height}</p>
+      <div class="text-sm text-text-secondary ml-auto">
+        <span>ファイル名: thumbnail_{selectedDate.getFullYear()}{String(selectedDate.getMonth() + 1).padStart(2, '0')}{String(selectedDate.getDate()).padStart(2, '0')}.png</span>
+        <span class="ml-2">サイズ: {canvasState.width} x {canvasState.height}</span>
       </div>
 
-      <div class="pt-4 border-t border-border space-y-2">
+      <div class="flex gap-2">
+        <Button variant="ghost" onclick={handleClose}>
+          キャンセル
+        </Button>
         <Button
           variant="primary"
-          class="w-full"
           onclick={handleDownload}
           disabled={isGenerating}
         >
           {isGenerating ? '生成中...' : 'ダウンロード'}
-        </Button>
-        <Button variant="ghost" class="w-full" onclick={handleClose}>
-          キャンセル
         </Button>
       </div>
     </div>
