@@ -214,27 +214,53 @@
       let newW = resizeStart.layerW;
       let newH = resizeStart.layerH;
 
+      const aspectRatio = resizeStart.layerW / resizeStart.layerH;
+
       switch (resizeHandle) {
-        case 'BR':
+        case 'BR': {
           newW = Math.max(MIN_SIZE, resizeStart.layerW + deltaX);
           newH = Math.max(MIN_SIZE, resizeStart.layerH + deltaY);
+          if (e.shiftKey) {
+            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
+            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
+            newH = Math.max(MIN_SIZE, newW / aspectRatio);
+          }
           break;
-        case 'BL':
+        }
+        case 'BL': {
           newW = Math.max(MIN_SIZE, resizeStart.layerW - deltaX);
-          newX = resizeStart.layerX + resizeStart.layerW - newW;
           newH = Math.max(MIN_SIZE, resizeStart.layerH + deltaY);
+          if (e.shiftKey) {
+            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
+            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
+            newH = Math.max(MIN_SIZE, newW / aspectRatio);
+          }
+          newX = resizeStart.layerX + resizeStart.layerW - newW;
           break;
-        case 'TR':
+        }
+        case 'TR': {
           newW = Math.max(MIN_SIZE, resizeStart.layerW + deltaX);
           newH = Math.max(MIN_SIZE, resizeStart.layerH - deltaY);
+          if (e.shiftKey) {
+            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
+            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
+            newH = Math.max(MIN_SIZE, newW / aspectRatio);
+          }
           newY = resizeStart.layerY + resizeStart.layerH - newH;
           break;
-        case 'TL':
+        }
+        case 'TL': {
           newW = Math.max(MIN_SIZE, resizeStart.layerW - deltaX);
-          newX = resizeStart.layerX + resizeStart.layerW - newW;
           newH = Math.max(MIN_SIZE, resizeStart.layerH - deltaY);
+          if (e.shiftKey) {
+            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
+            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
+            newH = Math.max(MIN_SIZE, newW / aspectRatio);
+          }
+          newX = resizeStart.layerX + resizeStart.layerW - newW;
           newY = resizeStart.layerY + resizeStart.layerH - newH;
           break;
+        }
       }
 
       layerState.setLayerPosition(layerState.selectedLayerId, { x: newX, y: newY });
