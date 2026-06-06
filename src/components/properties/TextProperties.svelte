@@ -198,8 +198,9 @@
         max={200}
         step={1}
         oninput={(e) => {
-          const v = Number((e.target as HTMLInputElement).value);
-          if (v >= 8 && v <= 200) updateStyle({ fontSize: v });
+          const v = Math.min(200, Math.max(8, Number((e.target as HTMLInputElement).value)));
+          (e.target as HTMLInputElement).value = String(v);
+          updateStyle({ fontSize: v });
         }}
         class="w-20 px-2 py-1 text-sm bg-bg-secondary border border-bg-tertiary rounded text-text-primary text-right"
       />
