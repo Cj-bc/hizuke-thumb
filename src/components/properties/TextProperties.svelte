@@ -188,15 +188,24 @@
   </div>
 
   <!-- サイズ -->
-  <div>
-    <Slider
-      label="サイズ"
-      value={layer.style.fontSize}
-      min={8}
-      max={200}
-      unit="px"
-      onchange={(value) => updateStyle({ fontSize: value })}
-    />
+  <div class="flex flex-col gap-1">
+    <label class="text-sm text-text-secondary">サイズ</label>
+    <div class="flex items-center gap-2">
+      <input
+        type="number"
+        value={layer.style.fontSize}
+        min={8}
+        max={200}
+        step={1}
+        oninput={(e) => {
+          const v = Math.min(200, Math.max(8, Number((e.target as HTMLInputElement).value)));
+          (e.target as HTMLInputElement).value = String(v);
+          updateStyle({ fontSize: v });
+        }}
+        class="w-20 px-2 py-1 text-sm bg-bg-secondary border border-bg-tertiary rounded text-text-primary text-right"
+      />
+      <span class="text-sm text-text-secondary">px</span>
+    </div>
   </div>
 
   <!-- 色 -->
