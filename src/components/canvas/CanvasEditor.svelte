@@ -12,6 +12,22 @@
   let isDragging = $state(false);
   let dragStart = $state<{ x: number; y: number; layerX: number; layerY: number } | null>(null);
 
+  // リサイズ状態
+  type ResizeHandle = 'TL' | 'TR' | 'BL' | 'BR';
+  let isResizing = $state(false);
+  let resizeHandle = $state<ResizeHandle | null>(null);
+  let resizeStart = $state<{
+    x: number;
+    y: number;
+    layerX: number;
+    layerY: number;
+    layerW: number;
+    layerH: number;
+  } | null>(null);
+
+  // カーソルスタイル
+  let cursorStyle = $state('crosshair');
+
   // 現在の日付（プレビュー用）
   let previewDate = $state(new Date());
 
@@ -50,6 +66,50 @@
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
     };
+  }
+
+  // 選択中画像レイヤーのバウンズを取得（ハンドル座標計算用）
+  function getSelectedImageLayerBounds() {
+    const layer = layerState.selectedLayer;
+    if (!layer || layer.type !== 'image') return null;
+    return {
+      x: layer.position.x,
+      y: layer.position.y,
+      width: layer.size.width,
+      height: layer.size.height,
+    };
+  }
+
+  // リサイズハンドルのヒットテスト（選択中レイヤーのコーナーを判定）
+  function hitTestResizeHandle(x: number, y: number): ResizeHandle | null {
+    const bounds = getSelectedImageLayerBounds();
+    if (!bounds) return null;
+
+    const OFFSET = 4;
+    const HIT_RADIUS = 8;
+    const handles: Array<[ResizeHandle, number, number]> = [
+      ['TL', bounds.x - OFFSET, bounds.y - OFFSET],
+      ['TR', bounds.x + bounds.width + OFFSET, bounds.y - OFFSET],
+      ['BL', bounds.x - OFFSET, bounds.y + bounds.height + OFFSET],
+      ['BR', bounds.x + bounds.width + OFFSET, bounds.y + bounds.height + OFFSET],
+    ];
+
+    for (const [handle, hx, hy] of handles) {
+      if (Math.abs(x - hx) <= HIT_RADIUS && Math.abs(y - hy) <= HIT_RADIUS) {
+        return handle;
+      }
+    }
+    return null;
+  }
+
+  // カーソルスタイルをリサイズハンドルに応じて更新
+  function getHandleCursor(handle: ResizeHandle): string {
+    switch (handle) {
+      case 'TL': return 'nwse-resize';
+      case 'TR': return 'nesw-resize';
+      case 'BL': return 'nesw-resize';
+      case 'BR': return 'nwse-resize';
+    }
   }
 
   // レイヤーのヒットテスト
@@ -99,6 +159,26 @@
 
     const coords = getCanvasCoords(e);
     if (!coords) return;
+
+    // リサイズハンドルを先にチェック
+    const handle = hitTestResizeHandle(coords.x, coords.y);
+    if (handle) {
+      const layer = layerState.selectedLayer;
+      if (layer && !layer.locked && layer.type === 'image') {
+        isResizing = true;
+        resizeHandle = handle;
+        resizeStart = {
+          x: coords.x,
+          y: coords.y,
+          layerX: layer.position.x,
+          layerY: layer.position.y,
+          layerW: layer.size.width,
+          layerH: layer.size.height,
+        };
+        return;
+      }
+    }
+
     const hitLayerId = hitTestLayer(coords.x, coords.y);
 
     if (hitLayerId) {
@@ -120,29 +200,84 @@
 
   // マウス移動
   function handleMouseMove(e: MouseEvent) {
-    if (!isDragging || !dragStart || !layerState.selectedLayerId) return;
-
     const coords = getCanvasCoords(e);
     if (!coords) return;
-    const deltaX = coords.x - dragStart.x;
-    const deltaY = coords.y - dragStart.y;
 
-    let newX = dragStart.layerX + deltaX;
-    let newY = dragStart.layerY + deltaY;
+    // リサイズ中
+    if (isResizing && resizeStart && resizeHandle && layerState.selectedLayerId) {
+      const deltaX = coords.x - resizeStart.x;
+      const deltaY = coords.y - resizeStart.y;
+      const MIN_SIZE = 10;
 
-    // スナップ
-    const snapped = canvasState.snapPosition({ x: newX, y: newY });
-    newX = snapped.x;
-    newY = snapped.y;
+      let newX = resizeStart.layerX;
+      let newY = resizeStart.layerY;
+      let newW = resizeStart.layerW;
+      let newH = resizeStart.layerH;
 
-    layerState.setLayerPosition(layerState.selectedLayerId, { x: newX, y: newY });
-    presetState.triggerAutoSave();
+      switch (resizeHandle) {
+        case 'BR':
+          newW = Math.max(MIN_SIZE, resizeStart.layerW + deltaX);
+          newH = Math.max(MIN_SIZE, resizeStart.layerH + deltaY);
+          break;
+        case 'BL':
+          newW = Math.max(MIN_SIZE, resizeStart.layerW - deltaX);
+          newX = resizeStart.layerX + resizeStart.layerW - newW;
+          newH = Math.max(MIN_SIZE, resizeStart.layerH + deltaY);
+          break;
+        case 'TR':
+          newW = Math.max(MIN_SIZE, resizeStart.layerW + deltaX);
+          newH = Math.max(MIN_SIZE, resizeStart.layerH - deltaY);
+          newY = resizeStart.layerY + resizeStart.layerH - newH;
+          break;
+        case 'TL':
+          newW = Math.max(MIN_SIZE, resizeStart.layerW - deltaX);
+          newX = resizeStart.layerX + resizeStart.layerW - newW;
+          newH = Math.max(MIN_SIZE, resizeStart.layerH - deltaY);
+          newY = resizeStart.layerY + resizeStart.layerH - newH;
+          break;
+      }
+
+      layerState.setLayerPosition(layerState.selectedLayerId, { x: newX, y: newY });
+      layerState.updateImageLayer(layerState.selectedLayerId, { size: { width: newW, height: newH } });
+      presetState.triggerAutoSave();
+      return;
+    }
+
+    // ドラッグ中（移動）
+    if (isDragging && dragStart && layerState.selectedLayerId) {
+      const deltaX = coords.x - dragStart.x;
+      const deltaY = coords.y - dragStart.y;
+
+      let newX = dragStart.layerX + deltaX;
+      let newY = dragStart.layerY + deltaY;
+
+      // スナップ
+      const snapped = canvasState.snapPosition({ x: newX, y: newY });
+      newX = snapped.x;
+      newY = snapped.y;
+
+      layerState.setLayerPosition(layerState.selectedLayerId, { x: newX, y: newY });
+      presetState.triggerAutoSave();
+      return;
+    }
+
+    // ホバー時のカーソル更新
+    const handle = hitTestResizeHandle(coords.x, coords.y);
+    if (handle) {
+      cursorStyle = getHandleCursor(handle);
+    } else {
+      const hitLayerId = hitTestLayer(coords.x, coords.y);
+      cursorStyle = hitLayerId ? 'move' : 'crosshair';
+    }
   }
 
   // マウスアップ
   function handleMouseUp() {
     isDragging = false;
     dragStart = null;
+    isResizing = false;
+    resizeHandle = null;
+    resizeStart = null;
   }
 
   // キー操作
@@ -244,7 +379,8 @@
           bind:this={canvasEl}
           width={canvasState.width}
           height={canvasState.height}
-          class="shadow-lg cursor-crosshair"
+          class="shadow-lg"
+          style="cursor: {cursorStyle};"
           onmousedown={handleMouseDown}
           onmousemove={handleMouseMove}
           onmouseup={handleMouseUp}
