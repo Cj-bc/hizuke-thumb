@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Input, Slider } from '$components/ui';
   import { layerState, presetState } from '$lib/state';
+  import { getImageLayerSize } from '$lib/types';
   import type { ImageLayer } from '$lib/types';
 
   interface Props {
@@ -8,6 +9,9 @@
   }
 
   let { layer }: Props = $props();
+
+  // 表示サイズは scale から算出される（直接は操作できない）
+  const displaySize = $derived(getImageLayerSize(layer));
 
   function updatePosition(axis: 'x' | 'y', value: number) {
     layerState.setLayerPosition(layer.id, {
@@ -17,10 +21,8 @@
     presetState.triggerAutoSave();
   }
 
-  function updateSize(dimension: 'width' | 'height', value: number) {
-    layerState.updateImageLayer(layer.id, {
-      size: { ...layer.size, [dimension]: value },
-    });
+  function updateScale(value: number) {
+    layerState.updateImageLayer(layer.id, { scale: value / 100 });
     presetState.triggerAutoSave();
   }
 
@@ -50,21 +52,33 @@
     </div>
   </div>
 
-  <!-- サイズ -->
+  <!-- 拡大率 -->
+  <div>
+    <Slider
+      label="拡大率"
+      value={Math.round(layer.scale * 100)}
+      min={1}
+      max={500}
+      unit="%"
+      onchange={updateScale}
+    />
+  </div>
+
+  <!-- サイズ（拡大率から算出される表示値。直接は操作できない） -->
   <div>
     <h4 class="text-xs font-medium text-text-secondary mb-2">サイズ</h4>
     <div class="grid grid-cols-2 gap-2">
       <Input
         type="number"
         label="幅"
-        value={Math.round(layer.size.width)}
-        oninput={(e) => updateSize('width', Number((e.target as HTMLInputElement).value))}
+        value={Math.round(displaySize.width)}
+        disabled
       />
       <Input
         type="number"
         label="高さ"
-        value={Math.round(layer.size.height)}
-        oninput={(e) => updateSize('height', Number((e.target as HTMLInputElement).value))}
+        value={Math.round(displaySize.height)}
+        disabled
       />
     </div>
   </div>
