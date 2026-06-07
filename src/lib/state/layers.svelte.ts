@@ -1,5 +1,5 @@
 import type { Layer, ImageLayer, TextLayer, TextContent, TextStyle } from '$lib/types';
-import { createImageLayer, createTextLayer, defaultTextStyle } from '$lib/types';
+import { createImageLayer, createTextLayer, defaultTextStyle, migrateImageLayer } from '$lib/types';
 import { generateId } from '$lib/storage';
 
 class LayerState {
@@ -204,7 +204,8 @@ class LayerState {
 
   // レイヤー一括設定（プリセット読み込み用）
   setLayers(layers: Layer[]) {
-    this.layers = layers;
+    // 旧形式の画像レイヤー（size プロパティ）を新形式へ移行
+    this.layers = layers.map(l => (l.type === 'image' ? migrateImageLayer(l) : l));
     this.selectedLayerId = layers.length > 0 ? layers[layers.length - 1].id : null;
   }
 

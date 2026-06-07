@@ -1,4 +1,5 @@
 import type { Layer, ImageLayer, TextLayer } from '$lib/types';
+import { getImageLayerSize } from '$lib/types';
 import { loadImage, getCachedImage, preloadImages } from './ImageLoader';
 import { renderText, measureText } from './TextRenderer';
 
@@ -127,14 +128,15 @@ export class CanvasEngine {
     const img = getCachedImage(layer.imageId);
     if (!img) return;
 
+    const { width, height } = getImageLayerSize(layer);
     this.ctx.save();
     this.ctx.globalAlpha = layer.opacity;
     this.ctx.drawImage(
       img,
       layer.position.x,
       layer.position.y,
-      layer.size.width,
-      layer.size.height
+      width,
+      height
     );
     this.ctx.restore();
   }
@@ -153,11 +155,12 @@ export class CanvasEngine {
     let bounds: { x: number; y: number; width: number; height: number };
 
     if (layer.type === 'image') {
+      const { width, height } = getImageLayerSize(layer);
       bounds = {
         x: layer.position.x,
         y: layer.position.y,
-        width: layer.size.width,
-        height: layer.size.height,
+        width,
+        height,
       };
     } else {
       // テキストの場合は計測
