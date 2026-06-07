@@ -186,10 +186,12 @@ export class CanvasEngine {
     this.ctx.restore();
 
     // コーナーハンドルを描画
-    this.drawHandle(bounds.x - 4, bounds.y - 4);
-    this.drawHandle(bounds.x + bounds.width + 4, bounds.y - 4);
-    this.drawHandle(bounds.x - 4, bounds.y + bounds.height + 4);
-    this.drawHandle(bounds.x + bounds.width + 4, bounds.y + bounds.height + 4);
+    if (layer.type === 'image') {
+      this.drawHandle(bounds.x - 4, bounds.y - 4);
+      this.drawHandle(bounds.x + bounds.width + 4, bounds.y - 4);
+      this.drawHandle(bounds.x - 4, bounds.y + bounds.height + 4);
+      this.drawHandle(bounds.x + bounds.width + 4, bounds.y + bounds.height + 4);
+    }
   }
 
   /**
