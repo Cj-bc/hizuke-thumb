@@ -16,6 +16,8 @@ export {
   defaultTextStyle,
   createImageLayer,
   createTextLayer,
+  getImageLayerSize,
+  migrateImageLayer,
 } from './layer';
 
 // プリセット関連

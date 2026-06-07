@@ -26,7 +26,10 @@ export interface BaseLayer {
 export interface ImageLayer extends BaseLayer {
   type: 'image';
   imageId: string;
-  size: { width: number; height: number };
+  // 画像本来のサイズ（不変。操作対象ではない）
+  naturalSize: { width: number; height: number };
+  // 拡大率。リサイズ操作ではこの値を変更する
+  scale: number;
   opacity: number;
 }
 
@@ -98,11 +101,36 @@ export function createImageLayer(
     type: 'image',
     imageId,
     position: { x: 0, y: 0 },
-    size: { width, height },
+    naturalSize: { width, height },
+    scale: 1,
     opacity: 1,
     visible: true,
     zIndex,
     locked: false,
+  };
+}
+
+// 画像レイヤーの表示サイズ（本来のサイズ × 拡大率）を取得
+export function getImageLayerSize(layer: ImageLayer): { width: number; height: number } {
+  return {
+    width: layer.naturalSize.width * layer.scale,
+    height: layer.naturalSize.height * layer.scale,
+  };
+}
+
+// 旧形式（size プロパティを持つ）の画像レイヤーを新形式へ移行する
+export function migrateImageLayer(layer: ImageLayer): ImageLayer {
+  if ('naturalSize' in layer && typeof layer.scale === 'number') {
+    return layer;
+  }
+  // 旧データ: 保存済みの size を本来のサイズとして扱い scale=1 にする
+  const legacy = layer as ImageLayer & { size?: { width: number; height: number } };
+  const size = legacy.size ?? { width: 0, height: 0 };
+  const { size: _omit, ...rest } = legacy;
+  return {
+    ...rest,
+    naturalSize: { width: size.width, height: size.height },
+    scale: 1,
   };
 }
 
