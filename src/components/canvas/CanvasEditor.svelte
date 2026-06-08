@@ -3,6 +3,7 @@
   import { CanvasEngine } from '$lib/canvas';
   import { canvasState, layerState, presetState } from '$lib/state';
   import { selectImageFile } from '$lib/utils';
+  import { getImageLayerSize } from '$lib/types';
 
   let containerEl: HTMLDivElement;
   let canvasEl = $state<HTMLCanvasElement | null>(null);
@@ -23,6 +24,9 @@
     layerY: number;
     layerW: number;
     layerH: number;
+    scale: number;
+    naturalW: number;
+    naturalH: number;
   } | null>(null);
 
   // カーソルスタイル
@@ -72,11 +76,12 @@
   function getSelectedImageLayerBounds() {
     const layer = layerState.selectedLayer;
     if (!layer || layer.type !== 'image') return null;
+    const { width, height } = getImageLayerSize(layer);
     return {
       x: layer.position.x,
       y: layer.position.y,
-      width: layer.size.width,
-      height: layer.size.height,
+      width,
+      height,
     };
   }
 
@@ -119,11 +124,12 @@
 
     for (const layer of hitTestLayers) {
       if (layer.type === 'image') {
+        const { width, height } = getImageLayerSize(layer);
         if (
           x >= layer.position.x &&
-          x <= layer.position.x + layer.size.width &&
+          x <= layer.position.x + width &&
           y >= layer.position.y &&
-          y <= layer.position.y + layer.size.height
+          y <= layer.position.y + height
         ) {
           return layer.id;
         }
@@ -165,6 +171,7 @@
     if (handle) {
       const layer = layerState.selectedLayer;
       if (layer && !layer.locked && layer.type === 'image') {
+        const { width, height } = getImageLayerSize(layer);
         isResizing = true;
         resizeHandle = handle;
         resizeStart = {
@@ -172,8 +179,11 @@
           y: coords.y,
           layerX: layer.position.x,
           layerY: layer.position.y,
-          layerW: layer.size.width,
-          layerH: layer.size.height,
+          layerW: width,
+          layerH: height,
+          scale: layer.scale,
+          naturalW: layer.naturalSize.width,
+          naturalH: layer.naturalSize.height,
         };
         return;
       }
@@ -209,62 +219,41 @@
       const deltaY = coords.y - resizeStart.y;
       const MIN_SIZE = 10;
 
+      // 各ハンドルのドラッグ方向に応じた、希望する表示サイズを算出
+      const wantW =
+        resizeHandle === 'BR' || resizeHandle === 'TR'
+          ? resizeStart.layerW + deltaX
+          : resizeStart.layerW - deltaX;
+      const wantH =
+        resizeHandle === 'BR' || resizeHandle === 'BL'
+          ? resizeStart.layerH + deltaY
+          : resizeStart.layerH - deltaY;
+
+      // scale は縦横一律。対角方向で大きい方の変化率を採用しアスペクト比を維持する
+      const ratio = Math.max(wantW / resizeStart.layerW, wantH / resizeStart.layerH);
+
+      // 表示サイズが MIN_SIZE を下回らないよう scale の下限を決める
+      const minScale = Math.max(
+        MIN_SIZE / resizeStart.naturalW,
+        MIN_SIZE / resizeStart.naturalH
+      );
+      const newScale = Math.max(minScale, resizeStart.scale * ratio);
+
+      const newW = resizeStart.naturalW * newScale;
+      const newH = resizeStart.naturalH * newScale;
+
+      // ドラッグしたハンドルの対角（アンカー）が動かないよう位置を補正
       let newX = resizeStart.layerX;
       let newY = resizeStart.layerY;
-      let newW = resizeStart.layerW;
-      let newH = resizeStart.layerH;
-
-      const aspectRatio = resizeStart.layerW / resizeStart.layerH;
-
-      switch (resizeHandle) {
-        case 'BR': {
-          newW = Math.max(MIN_SIZE, resizeStart.layerW + deltaX);
-          newH = Math.max(MIN_SIZE, resizeStart.layerH + deltaY);
-          if (e.shiftKey) {
-            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
-            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
-            newH = Math.max(MIN_SIZE, newW / aspectRatio);
-          }
-          break;
-        }
-        case 'BL': {
-          newW = Math.max(MIN_SIZE, resizeStart.layerW - deltaX);
-          newH = Math.max(MIN_SIZE, resizeStart.layerH + deltaY);
-          if (e.shiftKey) {
-            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
-            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
-            newH = Math.max(MIN_SIZE, newW / aspectRatio);
-          }
-          newX = resizeStart.layerX + resizeStart.layerW - newW;
-          break;
-        }
-        case 'TR': {
-          newW = Math.max(MIN_SIZE, resizeStart.layerW + deltaX);
-          newH = Math.max(MIN_SIZE, resizeStart.layerH - deltaY);
-          if (e.shiftKey) {
-            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
-            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
-            newH = Math.max(MIN_SIZE, newW / aspectRatio);
-          }
-          newY = resizeStart.layerY + resizeStart.layerH - newH;
-          break;
-        }
-        case 'TL': {
-          newW = Math.max(MIN_SIZE, resizeStart.layerW - deltaX);
-          newH = Math.max(MIN_SIZE, resizeStart.layerH - deltaY);
-          if (e.shiftKey) {
-            const scale = Math.max(newW / resizeStart.layerW, newH / resizeStart.layerH);
-            newW = Math.max(MIN_SIZE, resizeStart.layerW * scale);
-            newH = Math.max(MIN_SIZE, newW / aspectRatio);
-          }
-          newX = resizeStart.layerX + resizeStart.layerW - newW;
-          newY = resizeStart.layerY + resizeStart.layerH - newH;
-          break;
-        }
+      if (resizeHandle === 'BL' || resizeHandle === 'TL') {
+        newX = resizeStart.layerX + resizeStart.layerW - newW;
+      }
+      if (resizeHandle === 'TR' || resizeHandle === 'TL') {
+        newY = resizeStart.layerY + resizeStart.layerH - newH;
       }
 
       layerState.setLayerPosition(layerState.selectedLayerId, { x: newX, y: newY });
-      layerState.updateImageLayer(layerState.selectedLayerId, { size: { width: newW, height: newH } });
+      layerState.updateImageLayer(layerState.selectedLayerId, { scale: newScale });
       presetState.triggerAutoSave();
       return;
     }
